@@ -1,0 +1,22 @@
+{
+  "name": "capturetheether",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "debug": "^4.1.0",
+    "dotenv-safe": "^6.1.0",
+    "ramda": "^0.25.0",
+    "web3": "^1.0.0-beta.36"
+  },
+  "devDependencies": {
+    "@types/dotenv-safe": "^5.0.0",
+    "@types/ramda": "^0.25.39",
+    "@types/web3": "^1.0.8",
+    "truffle": "^4.1.14"
+  },
+  "scripts": {
+    "prebuild:contracts": "rm -fr build/contracts",
+    "build:contracts": "truffle compile"
+  }
+}
