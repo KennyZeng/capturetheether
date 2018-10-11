@@ -1,45 +1,44 @@
 require('dotenv-safe').config();
-const Web3 = require('web3')
+
+const { createWeb3 } = require('../web3')
+const {
+  DEPLOYED_CONTRACTS_STORE_PATH,
+  createContract,
+  createDeployedStore,
+} = require('../contracts')
 
 const debug = require('debug')('app:index')
 
-const { ropsten } = require('../providers')
-const { setupDefaultAccount } = require('../account')
-const { loadContract } = require('../contracts')
+const web3 = createWeb3()
 
-const web3 = new Web3(ropsten)
-
-const CHALLENGE_CONTRACT_AT = '0x09D3328010595987311AF3326BfE0BF074FD2782'
-const SOLUTION_CONTRACT_AT = '0x05f8883e90abf3ba76bd71ed20218e807b9847d2'
-
-setupDefaultAccount(web3)
-
-async function getBalanceString(address) {
-  const eth = web3.utils.fromWei(await web3.eth.getBalance(address), 'ether')
-  return `${eth} Eth`
-}
+const CHALLENGE_CONTRACT_NAME = 'PredictTheFuture'
+const SOLUTION_CONTRACT_NAME = 'PredictTheFutureSolution'
 
 async function main() {
-  const load = loadContract(web3, {
+  const store = createDeployedStore(DEPLOYED_CONTRACTS_STORE_PATH)
+
+  const $createContract = createContract(web3, {
     gas: 200000,
     from: web3.eth.defaultAccount,
   })
 
-  const instance = await load('PredictTheFuture', CHALLENGE_CONTRACT_AT)
+  const challenge = await Promise.resolve(CHALLENGE_CONTRACT_NAME)
+    .then(contractName => $createContract(contractName, store.get(contractName)))
 
-  const solutionInstance = await load('PredictTheFutureSolution', SOLUTION_CONTRACT_AT)
+  const solution = await Promise.resolve(SOLUTION_CONTRACT_NAME)
+    .then(contractName => $createContract(contractName, store.get(contractName)))
 
   let counter = 0
   const max = 10
 
   while (counter++ < max) {
     debug('Attempt #%d', counter)
-    const isComplete = await instance.methods.isComplete().call()
+    const isComplete = await challenge.methods.isComplete().call()
     debug({ isComplete })
 
-    if (!isComplete) { break }
+    if (isComplete) { break }
 
-    await solutionInstance.methods.solve(CHALLENGE_CONTRACT_AT, 5).send()
+    await solution.methods.solve(CHALLENGE_CONTRACT_AT, 5).send()
   }
 }
 
