@@ -5,7 +5,7 @@ contract PredictTheFuture {
   uint8 guess;
   uint256 settlementBlockNumber;
 
-  function PredictTheFutureChallenge() public payable {
+  function PredictTheFuture() public payable {
     require(msg.value == 1 ether);
   }
 
