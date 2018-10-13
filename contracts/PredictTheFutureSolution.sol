@@ -13,12 +13,12 @@ contract PredictTheFutureSolution {
     owner = msg.sender;
   }
 
-  function runLock(PredictTheFuture challenge, uint8 n) public payable {
+  function lockInGuess(PredictTheFuture challenge, uint8 n) public payable {
     require(msg.value == 1 ether, "Missing 1 ether");
     challenge.lockInGuess.value(msg.value)(n);
   }
 
-  function solve(PredictTheFuture challenge, uint8 guess) public {
+  function trySettle(PredictTheFuture challenge, uint8 guess) public {
     uint8 answer = uint8(keccak256(blockhash(block.number - 1), now)) % 10;
     if (answer == guess) {
       emit TestEvent(answer);

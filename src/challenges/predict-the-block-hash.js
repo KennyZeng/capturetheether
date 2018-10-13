@@ -1,12 +1,12 @@
 require('dotenv-safe').config();
 const assert = require('assert')
+const utils = require('web3-utils')
+const { createWeb3, network } = require('../web3')
+const { createContract } = require('../contracts')
+const { createDeployedStore, deployedStorePath } = require('../deployed')
+const { hex32ToAddress } = require('../utils')
+
 const debug = require('debug')('app:index')
-const { createWeb3 } = require('../web3')
-const {
-  DEPLOYED_CONTRACTS_STORE_PATH,
-  createContract,
-  createDeployedStore,
-} = require('../contracts')
 
 const CHALLENGE_CONTRACT_NAME = 'PredictTheBlockHashChallenge'
 const SOLUTION_CONTRACT_NAME = 'PredictTheBlockHashSolution'
@@ -14,14 +14,32 @@ const SOLUTION_CONTRACT_NAME = 'PredictTheBlockHashSolution'
 const web3 = createWeb3()
 
 async function main() {
-  const store = createDeployedStore(DEPLOYED_CONTRACTS_STORE_PATH)
+  const store = createDeployedStore(deployedStorePath(network))
 
   const $createContract = createContract(web3, {
     gas: 1000000,
     from: web3.eth.defaultAccount,
   })
 
-  const challenge = $createContract(CHALLENGE_CONTRACT_NAME, store.get(CHALLENGE_CONTRACT_NAME))
+  const challenge = await Promise.resolve(CHALLENGE_CONTRACT_NAME)
+    .then(contractName => {
+      const address = store.get(contractName)
+      const instance = $createContract(contractName, address)
+      return (
+        address
+          ? instance
+          : instance
+              .deploy()
+              .send({
+                value: utils.toWei('1', 'ether')
+              }).then(inst => {
+                assert(inst.options.address, 'No contract address!')
+                debug('deployed new contract', contractName, 'at', inst.options.address)
+                store.set(contractName, inst.options.address)
+                return inst
+              })
+      )
+  })
 
   const solution = await Promise.resolve(SOLUTION_CONTRACT_NAME)
     .then((contractName) => {
@@ -40,13 +58,15 @@ async function main() {
       )
     })
 
+  const getStorageAt = (position) => web3.eth.getStorageAt(challenge.options.address, position)
+
   const isComplete = await challenge.methods.isComplete().call()
   debug( { isComplete })
   if (isComplete) { return }
 
-  let guesser = hex32ToAddress(await web3.eth.getStorageAt(challenge.options.address, 0))
-  const guess = await web3.eth.getStorageAt(challenge.options.address, 1)
-  let settlementBlockNumber = web3.utils.hexToNumber(await web3.eth.getStorageAt(challenge.options.address, 2))
+  let guesser = await getStorageAt(0).then(hex32ToAddress)
+  const guess = await getStorageAt(1)
+  let settlementBlockNumber = utils.hexToNumber(await getStorageAt(2))
 
   debug({ guesser })
   debug({ guess })
@@ -54,9 +74,9 @@ async function main() {
   if (settlementBlockNumber === 0) {
     debug('guess not locked in yet')
     await solution.methods.step1(challenge.options.address, '0x0').send({
-      value: web3.utils.toWei('1', 'ether')
+      value: utils.toWei('1', 'ether')
     })
-    settlementBlockNumber = web3.utils.hexToNumber(await web3.eth.getStorageAt(challenge.options.address, 2))
+    settlementBlockNumber = utils.hexToNumber(await getStorageAt(2))
     guesser = solution.options.address
   }
 
@@ -86,14 +106,6 @@ async function main() {
     }
     await sleep(30 * 1000)
   }
-}
-
-function hex32ToAddress(hex) {
-  const bytes = web3.utils.hexToBytes(hex)
-  assert.equal(bytes.length, 32, 'Invalid hex size')
-  const addr = web3.utils.bytesToHex(bytes.slice(12))
-  assert(web3.utils.isAddress(addr), `"${addr}" is not a valid address`)
-  return addr
 }
 
 function sameAddresses(a1, a2) {
