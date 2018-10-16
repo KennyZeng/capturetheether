@@ -6,6 +6,8 @@
   "dependencies": {
     "debug": "^4.1.0",
     "dotenv-safe": "^6.1.0",
+    "ethereumjs-tx": "^1.3.7",
+    "ethereumjs-util": "^6.0.0",
     "mkdirp": "^0.5.1",
     "ramda": "^0.25.0",
     "rlp": "^2.1.0",
