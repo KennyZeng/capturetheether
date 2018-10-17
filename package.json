@@ -18,10 +18,12 @@
     "@types/dotenv-safe": "^5.0.0",
     "@types/ramda": "^0.25.39",
     "@types/web3": "^1.0.8",
+    "ganache-cli": "^6.1.8",
     "truffle": "^4.1.14"
   },
   "scripts": {
     "prebuild:contracts": "rm -fr build/contracts",
-    "build:contracts": "truffle compile"
+    "build:contracts": "truffle compile",
+    "ganache": "ganache-cli --account=\"0xf7abf8b140f69e5dfe236a77679c4f2ec0183795455dfd9b39357a5cefda5e85,100000000000000000000i\" --debug --verbose"
   }
 }
