@@ -9,7 +9,7 @@ const { createDeployedStore, deployedStorePath } = require('../deployed')
 const { bell, makeContractAddress } = require('../utils')
 const { createJsonStorage } = require('../json-storage')
 
-const debug = require('debug')('app:index')
+const debug = require('debug')('app')
 
 const CHALLENGE_CONTRACT_NAME = 'FuzzyIdentityChallenge'
 const SOLUTION_CONTRACT_NAME = 'FuzzyIdentitySolution'

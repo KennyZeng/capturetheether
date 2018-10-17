@@ -20,8 +20,33 @@ function bell() {
   process.stdout.write('\u0007')
 }
 
+/**
+ * @param {import('web3')} web3
+ * @param {string} from - sender account
+ * @param {string} to - receiver account
+ */
+async function sendAllEther(web3, from, to){
+  const gas = 21000
+  const remainingBalance = new BN(await web3.eth.getBalance(from))
+  const gasPrice = new BN(await web3.eth.getGasPrice())
+  const toSend = remainingBalance.sub(gasPrice.muln(gas))
+
+  if (toSend.isZero()) { return }
+  if (toSend.isNeg()) { return }
+
+  const value = toSend.toString()
+
+  return web3.eth.sendTransaction({
+    from,
+    to,
+    gas,
+    value,
+  })
+}
+
 module.exports = {
   hex32ToAddress,
   makeContractAddress,
   bell,
+  sendAllEther,
 }
